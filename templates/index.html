@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bone Fracture Classifier</title>
+    <link href="{{ url_for('static', filename='bootstrap-5.3.3-dist/css/bootstrap.min.css') }}" rel="stylesheet">
+    <script src = "https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            padding: 0;
+            background-color: #f8f9fa;
+            font-family: 'Roboto', sans-serif;
+        }
+        h1 {
+            margin-top: 0;
+            color: #343a40;
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        form {
+            margin-bottom: 2rem;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+            animation: slide-up 0.5s ease;
+        }
+        .results {
+            margin-top: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+        .model-container {
+            width: 100%;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+        }
+        .predictions-chart-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 2rem;
+        }
+        .predictions-container, .chart-container {
+            width: 45%;
+        }
+        .btn-primary {
+            background-color: #343a40;
+            border-color: #343a40;
+        }
+        .btn-primary:hover {
+            background-color: #23272b;
+            border-color: #1d2124;
+        }
+        input[type="file"] {
+        border: 1px solid #dee2e6;
+        padding: 0.5rem;
+        font-size: 1rem;
+        border-radius: 5px;
+        }
+        button[type="submit"] {
+        padding: 0.5rem 1rem;
+        font-size: 1.25rem;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center">Bone Fracture Classifier</h1>
+
+        <form class="p-3 text-center" action='/', method="post" enctype="multipart/form-data">
+            <div class="mb-3">
+                <input class="form-control" type="file" name="imagefile" >
+            </div>
+            <button class="btn btn-primary" type="submit">Predict Image</button>
+        </form>
+        
+        <div class="results">
+            {% for result in results %}
+                <div class="model-container">
+                    <h2>{{ result.model_name }}</h2>
+                    <div class="predictions-chart-container">
+                        <div class="predictions-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Fracture Type</th>
+                                        <th scope="col">Probability</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for prediction in result.predictions %}
+                                    <tr>
+                                        <td>{{ prediction.class_name }}</td>
+                                        <td>{{ '%0.5f' | format(prediction.probability * 100) }}%</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="myChart-{{ loop.index }}"></canvas>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <script>
+            {% for result in results %}
+                var ctx = document.getElementById('myChart-{{ loop.index }}').getContext('2d');
+                var myChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: [{% for prediction in result.predictions %}"{{ prediction.class_name }}",{% endfor %}],
+                        datasets: [{
+                            label: 'Probability',
+                            data: [{% for prediction in result.predictions %}{{ prediction.probability *  100 }},{% endfor %}],
+                            backgroundColor: [
+                                                'rgba(233, 30, 99, 0.2)',
+                                                'rgba(33, 150, 243, 0.2)',
+                                                'rgba(76, 175, 80, 0.2)',
+                                                'rgba(255, 152, 0, 0.2)',
+                                                'rgba(96, 125, 139, 0.2)',
+                                                'rgba(121, 85, 72, 0.2)',
+                                                'rgba(158, 158, 158, 0.2)',
+                                                'rgba(0, 188, 212, 0.2)',
+                                                'rgba(63, 81, 181, 0.2)',
+                                                'rgba(255, 87, 34, 0.2)'
+                                            ],
+                                            borderColor: [
+                                                'rgba(233, 30, 99, 1)',
+                                                'rgba(33, 150, 243, 1)',
+                                                'rgba(76, 175, 80, 1)',
+                                                'rgba(255, 152, 0, 1)',
+                                                'rgba(96, 125, 139, 1)',
+                                                'rgba(121, 85, 72, 1)',
+                                                'rgba(158, 158, 158, 1)',
+                                                'rgba(0, 188, 212, 1)',
+                                                'rgba(63, 81, 181, 1)',
+                                                'rgba(255, 87, 34, 1)'
+                                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        aspectRatio: 1,
+                        plugins: {
+                            legend: {
+                                position: 'right'
+                            }
+                        }
+                    }
+                });
+            {% endfor %}
+            
+        </script>
+    </div>
+</body>
+</html>
